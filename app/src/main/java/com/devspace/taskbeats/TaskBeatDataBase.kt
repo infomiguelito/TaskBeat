@@ -4,7 +4,9 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 
-@Database([CategoryEnity::class], version =  2)
+@Database([CategoryEnity::class,TaskEntity::class], version =  4)
  abstract class TaskBeatDataBase : RoomDatabase () {
      abstract fun getCategoryDao() : CategoryDao
+
+     abstract fun getTaskDao() : TaskDao
 }
