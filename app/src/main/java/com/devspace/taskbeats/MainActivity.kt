@@ -45,28 +45,33 @@ class MainActivity : AppCompatActivity() {
 
         categoryAdapter.setOnClickListener { selected ->
             if (selected.name == "+"){
-                Snackbar.make(rvCategory,"+ funciona",Snackbar.LENGTH_LONG).show()}
+               val createBottomSheet = BottomSheet()
+
+                createBottomSheet.show(supportFragmentManager,"createBottomSheet")
+            }
             else {
                 val categoryTemp = categories.map { item ->
                     when {
-                        item.name == selected.name && !item.isSelected && item.name != "+"-> item.copy(isSelected = true)
+                        item.name == selected.name && !item.isSelected -> item.copy(isSelected = true)
                         item.name == selected.name && item.isSelected -> item.copy(isSelected = false)
                         else -> item
                     }
                 }
 
-
-
-             val taskTemp =
-                if (selected.name != "ALL" && selected.name != "+") {
-                    tasks.filter { it.category == selected.name }
-                } else {
-                    tasks
-                }
+                val taskTemp =
+                    if (selected.name != "ALL" ) {
+                        tasks.filter { it.category == selected.name }
+                    } else {
+                        tasks
+                    }
                 taskAdapter.submitList(taskTemp)
 
                 categoryAdapter.submitList(categoryTemp)
             }
+
+
+
+
         }
 
         rvCategory.adapter = categoryAdapter
@@ -98,15 +103,18 @@ class MainActivity : AppCompatActivity() {
                     isSelected = false
                 )
             )
-            categories = categoriesUiData
+            GlobalScope.launch(Dispatchers.Main){
+                categories = categoriesUiData
 
-            adapter.submitList(categoriesUiData)
+                adapter.submitList(categoriesUiData)
+            }
+
         }
     }
 
     private fun getTaskFromDataBase(adapter: TaskListAdapter){
         GlobalScope.launch(Dispatchers.IO){
-            val taskFromDb = taskDao.getAll()
+            val taskFromDb : List<TaskEntity> = taskDao.getAll()
             val taskUiData = taskFromDb.map {
                 TaskUiData(
                     category = it.category,
@@ -114,16 +122,16 @@ class MainActivity : AppCompatActivity() {
 
                 )
             }
+            GlobalScope.launch(Dispatchers.Main){
+                tasks = taskUiData
 
-            tasks = taskUiData
+                adapter.submitList(taskUiData)
+            }
 
-            adapter.submitList(taskUiData)
+
         }
 
     }
-
-
-
 
 }
 
