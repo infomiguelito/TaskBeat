@@ -12,7 +12,7 @@ interface CategoryDao {
     fun getAll():(List<CategoryEnity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insetAll(categoryEnity: List<CategoryEnity>)
+    fun insetAll(categoryEnity: CategoryEnity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun inset(categoryEnity: CategoryEnity)

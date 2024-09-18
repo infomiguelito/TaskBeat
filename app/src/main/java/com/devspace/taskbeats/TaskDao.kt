@@ -12,7 +12,7 @@ interface TaskDao {
     fun getAll():(List<TaskEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAll(taskEntities: List<TaskEntity>)
+    fun insertAll(taskEntities: TaskEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(taskEntities: TaskEntity)
