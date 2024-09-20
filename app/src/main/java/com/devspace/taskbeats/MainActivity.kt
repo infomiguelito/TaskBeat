@@ -226,8 +226,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun deleteCategory(categoryEnity: CategoryEntity) {
         GlobalScope.launch(Dispatchers.IO) {
+            val tasksToBeDelete = taskDao.getAllByCategoryName(categoryEnity.name)
+            taskDao.deleteAll(tasksToBeDelete)
             categoryDao.delete(categoryEnity)
             getCategoriesFromDataBase()
+            getTaskFromTaskDataBase()
         }
     }
 
