@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
 
     private var categories = listOf<CategoryUiData>()
     private var tasks = listOf<TaskUiData>()
-
+    private var categoriesEntity = listOf<CategoryEntity>()
     private val categoryAdapter = CategoryListAdapter()
     private val taskAdapter by lazy {
         TaskListAdapter()
@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity() {
 
         categoryAdapter.setOnLongClickListener { categoryToBeDelete ->
 
-            if(categoryToBeDelete.name != "+") {
+            if(categoryToBeDelete.name != "+" && categoryToBeDelete.name != "All") {
                 val title: String = this.getString(R.string.category_delete_title)
                 val description: String = this.getString(R.string.category_delete_description)
                 val btnText: String = this.getString(R.string.delete)
@@ -95,20 +95,20 @@ class MainActivity : AppCompatActivity() {
             } else {
                 val categoryTemp = categories.map { item ->
                     when {
+                        item.name == selected.name && item.isSelected -> item.copy(isSelected = true)
                         item.name == selected.name && !item.isSelected -> item.copy(isSelected = true)
-                        item.name == selected.name && item.isSelected -> item.copy(isSelected = false)
+                        item.name != selected.name && item.isSelected -> item.copy(isSelected = false)
                         else -> item
                     }
                 }
 
-                val taskTemp =
-                    if (selected.name != "ALL") {
-                        tasks.filter { it.category == selected.name }
+                    if (selected.name != "All") {
+                        filterTaskByCategoryName(selected.name)
                     } else {
-                        tasks
+                        GlobalScope.launch(Dispatchers.IO) {
+                        getTaskFromTaskDataBase()
+                        }
                     }
-                taskAdapter.submitList(taskTemp)
-
                 categoryAdapter.submitList(categoryTemp)
             }
 
@@ -154,6 +154,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun getCategoriesFromDataBase() {
         val categoriesFromDb: List<CategoryEntity> = categoryDao.getAll()
+        categoriesEntity = categoriesFromDb
         val categoriesUiData = categoriesFromDb.map {
             CategoryUiData(
                 name = it.name,
@@ -167,9 +168,15 @@ class MainActivity : AppCompatActivity() {
                 isSelected = false
             )
         )
+        val categoryListTemp = mutableListOf(CategoryUiData(
+            name = "All",
+            isSelected = true,)
+        )
+        categoryListTemp.addAll(categoriesUiData)
+
         GlobalScope.launch(Dispatchers.Main) {
-            categories = categoriesUiData
-            categoryAdapter.submitList(categoriesUiData)
+            categories = categoryListTemp
+            categoryAdapter.submitList(categories)
         }
 
 
@@ -234,11 +241,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun filterTaskByCategoryName(category : String){
+        GlobalScope.launch(Dispatchers.IO) {
+            val taskFromDb: List<TaskEntity> = taskDao.getAllByCategoryName(category)
+            val taskUiData = taskFromDb.map {
+                TaskUiData(
+                    id = it.id,
+                    name = it.name,
+                    category = it.category
+
+                )
+            }
+            GlobalScope.launch(Dispatchers.Main) {
+                taskAdapter.submitList(taskUiData)
+            }
+        }
+    }
+
 
     private fun showCreateUpdateTaskBottomSheet(taskUiData: TaskUiData? = null) {
         val createTaskBottomSheet = CreateOrUpdateTaskBottomSheet(
             task = taskUiData,
-            categoryList = categories,
+            categoryList = categoriesEntity,
             onCreateClicked = { taskToBeCreated ->
                 val taskEntityToBeInsert = TaskEntity(
                     name = taskToBeCreated.name,
