@@ -1,8 +1,11 @@
 package com.devspace.taskbeats
 
 import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionScene.Transition.TransitionOnClick
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -14,6 +17,11 @@ class MainActivity : AppCompatActivity() {
 
     private var categories = listOf<CategoryUiData>()
     private var tasks = listOf<TaskUiData>()
+
+    private lateinit var rvCategory: RecyclerView
+    private lateinit var ctnContainer: LinearLayout
+    private lateinit var fabCreateTask: FloatingActionButton
+
     private var categoriesEntity = listOf<CategoryEntity>()
     private val categoryAdapter = CategoryListAdapter()
     private val taskAdapter by lazy {
@@ -41,9 +49,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
 
-        val rvCategory = findViewById<RecyclerView>(R.id.rv_categories)
+        rvCategory = findViewById(R.id.rv_categories)
+        ctnContainer = findViewById(R.id.ll_empty_view)
         val rvTask = findViewById<RecyclerView>(R.id.rv_tasks)
-        val fabCreateTask = findViewById<FloatingActionButton>(R.id.fab_create_task)
+        fabCreateTask = findViewById(R.id.fab_create_task)
+        val btnCreateEmpty = findViewById<Button>(R.id.btn_create_empty)
+
+        btnCreateEmpty.setOnClickListener {
+            showCreateCategoryBottomSheet()
+        }
 
         fabCreateTask.setOnClickListener {
             showCreateUpdateTaskBottomSheet()
@@ -82,16 +96,8 @@ class MainActivity : AppCompatActivity() {
 
         categoryAdapter.setOnClickListener { selected ->
             if (selected.name == "+") {
-                val createBottomSheet = CreateOrUpdateBottomSheet { categoryName ->
-                    val categoryEntity = CategoryEntity(
-                        name = categoryName,
-                        isSelected = false
-                    )
-                    insertCategory(categoryEntity)
+                showCreateCategoryBottomSheet()
 
-                }
-
-                createBottomSheet.show(supportFragmentManager, "createBottomSheet")
             } else {
                 val categoryTemp = categories.map { item ->
                     when {
@@ -155,6 +161,19 @@ class MainActivity : AppCompatActivity() {
     private fun getCategoriesFromDataBase() {
         val categoriesFromDb: List<CategoryEntity> = categoryDao.getAll()
         categoriesEntity = categoriesFromDb
+        GlobalScope.launch (Dispatchers.Main){
+            if (categoriesEntity.isEmpty()){
+                rvCategory.isVisible = false
+                fabCreateTask.isVisible = false
+                ctnContainer.isVisible = true
+            } else {
+                rvCategory.isVisible = true
+                fabCreateTask.isVisible = true
+                ctnContainer.isVisible = false
+            }
+        }
+
+
         val categoriesUiData = categoriesFromDb.map {
             CategoryUiData(
                 name = it.name,
@@ -293,6 +312,19 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager,
             "createTaskBottomSheet"
         )
+    }
+
+    private fun showCreateCategoryBottomSheet(){
+        val createBottomSheet = CreateOrUpdateBottomSheet { categoryName ->
+            val categoryEntity = CategoryEntity(
+                name = categoryName,
+                isSelected = false
+            )
+            insertCategory(categoryEntity)
+
+        }
+
+        createBottomSheet.show(supportFragmentManager, "createBottomSheet")
     }
 
 }
